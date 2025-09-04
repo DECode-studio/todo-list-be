@@ -3,6 +3,7 @@ import { LoginRequest, RegisterRequest } from '../model/request/auth';
 import { comparePassword, hashPassword } from '../utils/hash';
 import { generateToken } from '../utils/jwt';
 import { PrismaClient } from '@prisma/client';
+import { ApiResponse } from '@/model';
 
 const prisma = new PrismaClient()
 
@@ -14,15 +15,23 @@ export const register = async (
         const body: RegisterRequest = req.body;
 
         if (!body.name || !body.email || !body.password) {
-            return res.status(400).json({
-                error: 'Name, email, and password are required',
-            });
+            const response: ApiResponse = {
+                status: {
+                    code: 400,
+                    message: 'Name, email, and password are required',
+                },
+            }
+            return res.json(response);
         }
 
         if (body.password !== body.confirmPassword) {
-            return res.status(400).json({
-                error: 'Password and confirm password do not match',
-            });
+            const response: ApiResponse = {
+                status: {
+                    code: 400,
+                    message: 'Password and confirm password do not match',
+                },
+            }
+            return res.json(response);
         }
 
         const existingUser = await prisma.user.findUnique({
@@ -30,9 +39,13 @@ export const register = async (
         });
 
         if (existingUser) {
-            return res.status(409).json({
-                error: 'Email already in use',
-            });
+            const response: ApiResponse = {
+                status: {
+                    code: 400,
+                    message: 'Email already in use',
+                },
+            }
+            return res.json(response);
         }
 
         const hashedPassword = await hashPassword(body.password);
@@ -46,17 +59,27 @@ export const register = async (
         });
 
         const token = generateToken(user);
+        const response: ApiResponse = {
+            status: {
+                code: 200,
+                message: 'User registered successfully'
+            },
+            data: {
+                token, user,
+            }
+        }
 
-        return res.status(201).json({
-            message: 'User registered successfully',
-            token,
-            user,
-        });
+        return res.json(response);
     } catch (error: any) {
+        const response: ApiResponse = {
+            status: {
+                code: 400,
+                message: `Bad request: ${error}`
+            },
+        }
+
         console.error(error);
-        return res.status(500).json({
-            error: 'Internal server error',
-        });
+        return res.json(response);
     }
 };
 
@@ -65,9 +88,13 @@ export const login = async (req: Request, res: Response) => {
         const body: LoginRequest = req.body;
 
         if (!body.email || !body.password) {
-            return res.status(400).json({
-                error: 'Email and password are required',
-            });
+            const response: ApiResponse = {
+                status: {
+                    code: 400,
+                    message: 'Email and password are required',
+                },
+            }
+            return res.json(response);
         }
 
         const user = await prisma.user.findUnique({
@@ -75,36 +102,47 @@ export const login = async (req: Request, res: Response) => {
         });
 
         if (!user) {
-            return res.status(401).json({
-                error: 'Invalid email or password',
-            });
+            const response: ApiResponse = {
+                status: {
+                    code: 400,
+                    message: 'Invalid email or password',
+                },
+            }
+            return res.json(response);
         }
 
         const isPasswordValid = await comparePassword(body.password, user.password);
         if (!isPasswordValid) {
-            return res.status(401).json({
-                error: 'Invalid email or password',
-            });
+            const response: ApiResponse = {
+                status: {
+                    code: 400,
+                    message: 'Invalid email or password',
+                },
+            }
+            return res.json(response);
         }
 
         const token = generateToken(user);
-
-        return res.json({
-            message: 'Login successful',
-            token,
-            user: {
-                id: user?.id ?? '',
-                name: user?.name ?? '',
-                email: user?.email ?? '',
-                createdAt: user?.createdAt ?? '',
-                updatedAt: user?.updatedAt ?? '',
-                deleted: user?.deleted ?? '',
+        const response: ApiResponse = {
+            status: {
+                code: 200,
+                message: 'Login successful',
             },
-        });
+            data: {
+                token, user,
+            }
+        }
+
+        return res.json(response);
     } catch (error: any) {
+        const response: ApiResponse = {
+            status: {
+                code: 400,
+                message: `Bad request: ${error}`
+            },
+        }
+
         console.error(error);
-        return res.status(500).json({
-            error: 'Internal server error',
-        });
+        return res.json(response);
     }
 }

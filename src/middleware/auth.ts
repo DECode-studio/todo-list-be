@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '@/utils/jwt';
 import { PrismaClient } from '@prisma/client';
+import { ApiResponse } from '@/model';
 
 declare global {
     namespace Express {
@@ -22,7 +23,13 @@ export const authenticate = async (
     const authHeader = req.headers['authorization'];
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Access denied. No token provided.' });
+        const response: ApiResponse = {
+            status: {
+                code: 401,
+                message: 'Access denied. No token provided.'
+            },
+        }
+        return res.json(response);
     }
 
     const token = authHeader.split(' ')[1];
@@ -34,7 +41,13 @@ export const authenticate = async (
         });
 
         if (!user) {
-            return res.status(401).json({ error: 'Invalid token or user not found.' });
+            const response: ApiResponse = {
+                status: {
+                    code: 401,
+                    message: 'Invalid token or user not found.'
+                },
+            }
+            return res.json(response);
         }
 
         req.user = decoded;

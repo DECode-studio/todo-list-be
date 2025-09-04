@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { Request, Response } from 'express';
 import { TaskStatus } from '@prisma/client';
+import { ApiResponse } from '@/model';
 
 const prisma = new PrismaClient()
 
@@ -34,13 +35,25 @@ export const getTasks = async (
             orderBy: { createdAt: 'desc' },
         });
 
-        return res.json({
-            message: 'Tasks retrieved successfully',
-            data: tasks,
-        });
+        const response: ApiResponse = {
+            status: {
+                code: 200,
+                message: 'Tasks retrieved successfully'
+            },
+            data: tasks
+        }
+
+        return res.json(response);
     } catch (error: any) {
+        const response: ApiResponse = {
+            status: {
+                code: 400,
+                message: `Bad request: ${error}`
+            },
+        }
+
         console.error(error);
-        return res.status(500).json({ error: 'Internal server error' });
+        return res.json(response);
     }
 };
 
@@ -49,7 +62,7 @@ export const createTask = async (
     res: Response
 ) => {
     try {
-        const userId = req.user!.id;
+        const userId = req.user?.id;
         const { title, description } = req.body;
 
         if (!title) {
@@ -70,8 +83,15 @@ export const createTask = async (
             data: task,
         });
     } catch (error: any) {
+        const response: ApiResponse = {
+            status: {
+                code: 400,
+                message: `Bad request: ${error}`
+            },
+        }
+
         console.error(error);
-        return res.status(500).json({ error: 'Internal server error' });
+        return res.json(response);
     }
 };
 
@@ -80,8 +100,8 @@ export const updateTaskStatus = async (
     res: Response
 ) => {
     try {
-        const userId = req.user!.id;
-        const { id } = req.params;
+        const userId = req.user?.id;
+        const { id } = req.query;
         const { status } = req.body;
 
         if (!status || !Object.values(TaskStatus).includes(status as any)) {
@@ -90,7 +110,7 @@ export const updateTaskStatus = async (
 
         const task = await prisma.task.findFirst({
             where: {
-                id,
+                id: id.toString(),
                 userId,
                 deleted: false,
             },
@@ -101,7 +121,9 @@ export const updateTaskStatus = async (
         }
 
         const updatedTask = await prisma.task.update({
-            where: { id },
+            where: {
+                id: id.toString()
+            },
             data: { status }
         });
 
@@ -110,7 +132,14 @@ export const updateTaskStatus = async (
             data: updatedTask,
         });
     } catch (error: any) {
+        const response: ApiResponse = {
+            status: {
+                code: 400,
+                message: `Bad request: ${error}`
+            },
+        }
+
         console.error(error);
-        return res.status(500).json({ error: 'Internal server error' });
+        return res.json(response);
     }
 };

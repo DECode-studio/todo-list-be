@@ -13,6 +13,6 @@ router.post(`${authRoute}/login`, login);
 const taskRoute = '/api/task'
 router.get(`${taskRoute}/get-tasks`, authenticate, getTasks);
 router.post(`${taskRoute}/add-task`, authenticate, createTask);
-router.patch(`${taskRoute}/edit-task:id`, authenticate, updateTaskStatus);
+router.patch(`${taskRoute}/edit-task`, authenticate, updateTaskStatus);
 
 export default router;
