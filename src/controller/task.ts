@@ -66,7 +66,23 @@ export const createTask = async (
         const { title, description } = req.body;
 
         if (!title) {
-            return res.status(400).json({ error: 'Title is required' });
+            const response: ApiResponse = {
+                status: {
+                    code: 400,
+                    message: 'Title is required'
+                },
+            }
+            return res.json(response);
+        }
+
+        if (!description) {
+            const response: ApiResponse = {
+                status: {
+                    code: 400,
+                    message: 'Description is required'
+                },
+            }
+            return res.json(response);
         }
 
         const task = await prisma.task.create({
@@ -78,10 +94,15 @@ export const createTask = async (
             }
         });
 
-        return res.status(201).json({
-            message: 'Task created successfully',
+        const response: ApiResponse = {
+            status: {
+                code: 200,
+                message: 'Task created successfully',
+            },
             data: task,
-        });
+        }
+
+        return res.json(response);
     } catch (error: any) {
         const response: ApiResponse = {
             status: {
@@ -117,7 +138,13 @@ export const updateTaskStatus = async (
         });
 
         if (!task) {
-            return res.status(404).json({ error: 'Task not found or access denied' });
+            const response: ApiResponse = {
+                status: {
+                    code: 404,
+                    message: 'Task not found or access denied'
+                },
+            }
+            return res.json(response);
         }
 
         const updatedTask = await prisma.task.update({
@@ -127,10 +154,70 @@ export const updateTaskStatus = async (
             data: { status }
         });
 
-        return res.json({
-            message: 'Task status updated',
+        const response: ApiResponse = {
+            status: {
+                code: 200,
+                message: 'Task status updated',
+            },
             data: updatedTask,
+        }
+
+        return res.json(response);
+    } catch (error: any) {
+        const response: ApiResponse = {
+            status: {
+                code: 400,
+                message: `Bad request: ${error}`
+            },
+        }
+
+        console.error(error);
+        return res.json(response);
+    }
+};
+
+export const deleteTask = async (
+    req: Request,
+    res: Response
+) => {
+    try {
+        const userId = req.user?.id;
+        const { id } = req.query;
+
+        const task = await prisma.task.findFirst({
+            where: {
+                id: id.toString(),
+                userId,
+                deleted: false,
+            },
         });
+
+        if (!task) {
+            const response: ApiResponse = {
+                status: {
+                    code: 404,
+                    message: 'Task not found or access denied'
+                },
+            }
+            return res.json(response);
+        }
+
+        const updatedTask = await prisma.task.update({
+            where: {
+                id: id.toString()
+            },
+            data: { deleted: true }
+        });
+
+        const response: ApiResponse = {
+            status: {
+                code: 200,
+                message: 'Task deleted',
+            },
+            data: updatedTask,
+        }
+
+        return res.json(response);
     } catch (error: any) {
         const response: ApiResponse = {
             status: {
