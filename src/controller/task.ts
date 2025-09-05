@@ -123,7 +123,9 @@ export const updateTaskStatus = async (
     try {
         const userId = req.user?.id;
         const { id } = req.query;
-        const { status } = req.body;
+        const {
+            title, description, status
+        } = req.body;
 
         if (!status || !Object.values(TaskStatus).includes(status as any)) {
             return res.status(400).json({ error: 'Invalid or missing status' });
@@ -151,7 +153,9 @@ export const updateTaskStatus = async (
             where: {
                 id: id.toString()
             },
-            data: { status }
+            data: {
+                title, description, status
+            }
         });
 
         const response: ApiResponse = {
