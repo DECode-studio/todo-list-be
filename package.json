@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev -r tsconfig-paths/register src/app.ts",
-    "build": "tsc",
+    "build": "rm -rf dist && mkdir dist && tsc",
     "start": "ts-node-esm src/app.ts",
     "prisma:studio": "npx prisma studio",
     "prisma:migrate": "npx prisma migrate dev --name",
